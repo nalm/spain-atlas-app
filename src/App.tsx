@@ -15,6 +15,7 @@ import { OverviewPanel } from './components/OverviewPanel';
 import { StatsModal } from './components/StatsModal';
 import { UnitDetail } from './components/UnitDetail';
 import { ADMIN_UNITS, UNIT_MAP } from './data/atlasData';
+import { ALL_PROVINCES } from './data/provincesData';
 import {
   LENS_OPTIONS,
   MACRO_REGIONS,
@@ -50,7 +51,7 @@ export function App() {
   const searchResults = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return [];
-    const results: { type: 'unit' | 'city'; unitId: string; cityId?: string; label: string; sub: string }[] = [];
+    const results: { type: 'unit' | 'city' | 'province'; unitId: string; cityId?: string; label: string; sub: string }[] = [];
     for (const u of ADMIN_UNITS) {
       if (
         u.nameKo.toLowerCase().includes(q) ||
@@ -78,6 +79,20 @@ export function App() {
             sub: `${c.nameEn} · ${c.populationText}`,
           });
         }
+      }
+    }
+    for (const p of ALL_PROVINCES) {
+      if (
+        p.nameKo.toLowerCase().includes(q) ||
+        p.nameLocal.toLowerCase().includes(q)
+      ) {
+        const parent = UNIT_MAP[p.unitId];
+        results.push({
+          type: 'province',
+          unitId: p.unitId,
+          label: `${p.nameKo} (${parent?.shortNameKo ?? p.unitId})`,
+          sub: `INE ${p.ineCode} · 주도 ${p.capitalKo} · 약 ${p.populationMan}만 명`,
+        });
       }
     }
     return results.slice(0, 10);
@@ -150,7 +165,11 @@ export function App() {
                       <div className="text-[11px] text-slate-500">{res.sub}</div>
                     </div>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">
-                      {res.type === 'unit' ? '자치단위' : '도시'}
+                      {res.type === 'unit'
+                        ? '자치단위'
+                        : res.type === 'province'
+                        ? '소속 주'
+                        : '도시'}
                     </span>
                   </button>
                 ))}

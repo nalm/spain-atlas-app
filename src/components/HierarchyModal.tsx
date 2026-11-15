@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Crown, Layers, ShieldCheck, X } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Crown, Layers, MapPin, Search, ShieldCheck, X } from 'lucide-react';
+import { ADMIN_UNITS, formatAreaKm2, UNIT_MAP } from '../data/atlasData';
+import { ALL_PROVINCES } from '../data/provincesData';
 import {
   SPAIN_HIERARCHY_LEVELS,
   SPAIN_KINGDOM_MATRIX,
@@ -15,7 +17,23 @@ export const HierarchyModal: React.FC<HierarchyModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const [tab, setTab] = useState<'kingdoms' | 'hierarchy' | 'regimes'>('kingdoms');
+  const [tab, setTab] = useState<'kingdoms' | 'hierarchy' | 'regimes' | 'provinces'>('kingdoms');
+  const [provUnitFilter, setProvUnitFilter] = useState<string>('all');
+  const [provQuery, setProvQuery] = useState<string>('');
+
+  const filteredProvinces = useMemo(() => {
+    const q = provQuery.trim().toLowerCase();
+    return ALL_PROVINCES.filter((p) => {
+      if (provUnitFilter !== 'all' && p.unitId !== provUnitFilter) return false;
+      if (!q) return true;
+      return (
+        p.nameKo.toLowerCase().includes(q) ||
+        p.nameLocal.toLowerCase().includes(q) ||
+        p.capitalKo.toLowerCase().includes(q) ||
+        p.ineCode.includes(q)
+      );
+    }).sort((a, b) => a.ineCode.localeCompare(b.ineCode));
+  }, [provUnitFilter, provQuery]);
 
   if (!isOpen) return null;
 
@@ -78,6 +96,18 @@ export const HierarchyModal: React.FC<HierarchyModalProps> = ({
           >
             <ShieldCheck className="w-4 h-4" />
             포랄 조세자치 · 특수 지위
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('provinces')}
+            className={`px-4 py-2 rounded-t-xl text-xs font-bold flex items-center gap-1.5 border-b-2 transition-colors ${
+              tab === 'provinces'
+                ? 'bg-white text-rose-700 border-rose-500'
+                : 'text-slate-600 border-transparent hover:text-slate-900'
+            }`}
+          >
+            <MapPin className="w-4 h-4" />
+            50개 주(Provincias) 전체
           </button>
         </div>
 
@@ -195,6 +225,85 @@ export const HierarchyModal: React.FC<HierarchyModalProps> = ({
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {tab === 'provinces' && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={provUnitFilter}
+                    onChange={(e) => setProvUnitFilter(e.target.value)}
+                    className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400"
+                  >
+                    <option value="all">전체 17개 자치주 (50개 주)</option>
+                    {ADMIN_UNITS.filter((u) => u.provincesCount > 0).map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.nameKo} ({u.provincesCount}개 주)
+                      </option>
+                    ))}
+                  </select>
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={provQuery}
+                      onChange={(e) => setProvQuery(e.target.value)}
+                      placeholder="주 이름·주도·INE 코드 검색"
+                      className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400"
+                    />
+                  </div>
+                </div>
+                <div className="text-xs font-bold text-slate-600">
+                  표시 중: <span className="text-rose-700">{filteredProvinces.length}개 주</span> / 50개
+                </div>
+              </div>
+
+              <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-100 text-slate-700 border-b border-slate-200">
+                      <th className="p-2.5 font-bold">INE</th>
+                      <th className="p-2.5 font-bold">주 (Provincia)</th>
+                      <th className="p-2.5 font-bold">소속 자치주</th>
+                      <th className="p-2.5 font-bold">주도</th>
+                      <th className="p-2.5 font-bold">인구</th>
+                      <th className="p-2.5 font-bold">면적</th>
+                      <th className="p-2.5 font-bold">특징</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {filteredProvinces.map((p) => {
+                      const parent = UNIT_MAP[p.unitId];
+                      return (
+                        <tr key={p.ineCode} className="hover:bg-rose-50/40">
+                          <td className="p-2.5 font-mono font-bold text-slate-500">
+                            {p.ineCode}
+                          </td>
+                          <td className="p-2.5">
+                            <span className="font-bold text-slate-900">{p.nameKo}</span>
+                            <span className="text-[11px] text-slate-400 ml-1">
+                              ({p.nameLocal})
+                            </span>
+                          </td>
+                          <td className="p-2.5 font-semibold text-indigo-700">
+                            {parent?.shortNameKo ?? p.unitId}
+                          </td>
+                          <td className="p-2.5 text-slate-700">{p.capitalKo}</td>
+                          <td className="p-2.5 font-semibold text-slate-900">
+                            {p.populationMan.toLocaleString('ko-KR')}만
+                          </td>
+                          <td className="p-2.5 text-slate-600">
+                            {formatAreaKm2(p.areaKm2)}
+                          </td>
+                          <td className="p-2.5 text-slate-600 max-w-xs">{p.note}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

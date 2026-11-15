@@ -171,3 +171,15 @@ export interface ComparePreset {
   desc: string;
   unitIds: [string, string] | [string, string, string];
 }
+
+export interface ProvinceItem {
+  ineCode: string; // '01' .. '50'
+  unitId: string;
+  nameKo: string;
+  nameLocal: string;
+  capitalKo: string;
+  populationMan: number;
+  areaKm2: number;
+  note: string;
+}
+

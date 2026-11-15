@@ -20,6 +20,7 @@ import {
   POPULATION_RANK,
 } from '../data/atlasData';
 import { MACRO_REGIONS } from '../data/countryConfig';
+import { PROVINCES_BY_UNIT } from '../data/provincesData';
 import { AdminUnitInfo } from '../types/atlas';
 
 interface UnitDetailProps {
@@ -36,6 +37,7 @@ export const UnitDetail: React.FC<UnitDetailProps> = ({
   const macro = MACRO_REGIONS[unit.regionId];
   const activeCity =
     unit.cities.find((c) => c.id === selectedCityId) ?? unit.cities[0];
+  const provinces = PROVINCES_BY_UNIT[unit.id] ?? [];
 
   return (
     <section id="detail-section" className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
@@ -378,6 +380,64 @@ export const UnitDetail: React.FC<UnitDetailProps> = ({
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Constituent Provinces Section */}
+        <div className="px-6 pb-6 pt-2 border-t border-slate-100 bg-slate-50/50">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3 pt-3">
+            <h4 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-indigo-600" />
+              소속 주 (Provincias) 구성
+              <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 text-[11px] font-bold">
+                {provinces.length > 0 ? `${provinces.length}개 주` : '자치시 (주 미소속)'}
+              </span>
+            </h4>
+            <span className="text-[11px] text-slate-500">
+              스페인 전체 50개 주(INE 01~50) 중 {unit.shortNameKo} 관할 구역
+            </span>
+          </div>
+
+          {provinces.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {provinces.map((prov) => (
+                <div
+                  key={prov.ineCode}
+                  className="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-sm"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-1.5 py-0.5 rounded bg-slate-900 text-amber-300 font-mono text-[10px] font-bold">
+                        INE {prov.ineCode}
+                      </span>
+                      <span className="text-sm font-extrabold text-slate-900">
+                        {prov.nameKo}
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      {prov.nameLocal}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 text-[11px] text-slate-600 mt-2">
+                    <span>
+                      <strong className="text-slate-800">주도:</strong> {prov.capitalKo}
+                    </span>
+                    <span>·</span>
+                    <span>약 {prov.populationMan.toLocaleString('ko-KR')}만 명</span>
+                    <span>·</span>
+                    <span>{formatAreaKm2(prov.areaKm2)}</span>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                    {prov.note}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 p-4 text-xs text-slate-600">
+              {unit.nameKo}는 1995년 자치헌장에 따라 별도의 주(Provincia)에 속하지 않는{' '}
+              <strong className="text-slate-900">독립 자치시(Ciudad Autónoma)</strong>입니다.
+            </div>
+          )}
         </div>
       </div>
     </section>
