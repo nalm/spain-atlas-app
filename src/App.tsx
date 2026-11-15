@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import {
   BarChart3,
   Crown,
@@ -387,6 +388,7 @@ export function App() {
         onClose={() => setStatsOpen(false)}
         onSelectUnit={(uId) => handleSelectUnit(uId)}
       />
+      <Analytics />
     </div>
   );
 }
